@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — The Missing Manual</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+<div class="app-wrapper ready">
+  <div id="sidebar-mount"></div>
+  <main class="main-content">
+    <div id="topbar-mount"></div>
+
+    <div id="dashboard-gate" class="hidden" style="padding:80px 44px;text-align:center">
+      <div style="font-size:40px;margin-bottom:16px">🔒</div>
+      <h2 style="margin-bottom:8px">Sign in to see your dashboard</h2>
+      <p style="margin-bottom:24px;color:var(--text-muted)">Track your contributions, reputation, and impact.</p>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <a href="login.html" class="btn btn-ghost">Sign in</a>
+        <a href="signup.html" class="btn btn-primary">Create account</a>
+      </div>
+    </div>
+
+    <div id="dashboard-content" class="page">
+      <div style="margin-bottom:28px">
+        <h2 id="dash-greeting" style="margin-bottom:4px">Good morning</h2>
+        <p style="font-size:14px">Here's how your contributions are performing.</p>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="dash-grid">
+        <div class="dash-card">
+          <div class="dash-label">Reputation score</div>
+          <div class="dash-value" id="d-rep">0</div>
+          <div class="dash-sub dash-green">↑ +47 this week</div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-label">Total wishes received</div>
+          <div class="dash-value" id="d-wishes">0</div>
+          <div class="dash-sub">Across all your lessons</div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-label">Lessons submitted</div>
+          <div class="dash-value" id="d-lessons">0</div>
+          <div class="dash-sub">
+            <a href="submit.html" style="color:var(--accent);font-size:12px">+ Submit another →</a>
+          </div>
+        </div>
+        <div class="dash-card">
+          <div class="dash-label">Lessons saved</div>
+          <div class="dash-value" id="d-saved">0</div>
+          <div class="dash-sub">
+            <a href="saved.html" style="color:var(--accent);font-size:12px">View saved →</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Badges -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px 24px;margin-bottom:16px">
+        <div class="section-header" style="margin-bottom:16px">
+          <div class="section-title">Your badges</div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap" id="badges-list">
+          <div style="display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;flex:1;min-width:180px">
+            <span style="font-size:22px">🥇</span>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--text-primary)">First Contribution</div>
+              <div style="font-size:11.5px;color:var(--text-muted)">You shared your first lesson</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;flex:1;min-width:180px;opacity:0.4">
+            <span style="font-size:22px">🔥</span>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--text-primary)">Top Contributor</div>
+              <div style="font-size:11.5px;color:var(--text-muted)">Submit 10 lessons to unlock</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;flex:1;min-width:180px;opacity:0.4">
+            <span style="font-size:22px">💜</span>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--text-primary)">Community Favorite</div>
+              <div style="font-size:11.5px;color:var(--text-muted)">Reach 500 wishes to unlock</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;flex:1;min-width:180px;opacity:0.4">
+            <span style="font-size:22px">🧠</span>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--text-primary)">Expert Contributor</div>
+              <div style="font-size:11.5px;color:var(--text-muted)">Reach 1000 reputation</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent activity -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:16px">
+        <div style="padding:18px 24px;border-bottom:1px solid var(--border)">
+          <div class="section-title">Recent activity</div>
+        </div>
+        <div id="activity-feed">
+          <div style="padding:36px;text-align:center">
+            <div style="font-size:24px;margin-bottom:10px;opacity:0.3">📭</div>
+            <p style="font-size:13px;color:var(--text-muted)">No activity yet. Submit a lesson to get started.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pending submissions -->
+      <div id="pending-wrap" class="hidden" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:16px">
+        <div style="padding:18px 24px;border-bottom:1px solid var(--border)">
+          <div class="section-title">Pending submissions</div>
+        </div>
+        <div id="pending-list" style="padding:16px 24px"></div>
+      </div>
+
+      <!-- Quick actions -->
+      <div style="background:var(--text-primary);border-radius:var(--radius-lg);padding:28px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px">
+        <div>
+          <div style="font-family:'DM Serif Display',serif;font-size:1.25rem;color:white;margin-bottom:4px">Got a lesson to share?</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.55)">Someone out there needs to hear what you know.</div>
+        </div>
+        <a href="submit.html" class="btn" style="background:white;color:var(--text-primary);font-weight:700">
+          Submit a lesson →
+        </a>
+      </div>
+
+      <div style="height:80px"></div>
+    </div>
+  </main>
+</div>
+<div id="share-modal-mount"></div>
+<div class="toast"></div>
+<div id="mobile-nav-mount"></div>
+
+<script src="../js/app.js"></script><script src="../js/loader.js"></script>
+<script>
+  document.getElementById('sidebar-mount').innerHTML = buildSidebar('dashboard');
+  document.getElementById('topbar-mount').innerHTML = buildTopbar();
+  document.getElementById('share-modal-mount').innerHTML = buildShareModal();
+  document.getElementById('mobile-nav-mount').innerHTML = buildMobileNav('profile');
+
+  const user = Auth.getUser();
+  if (!user) {
+    document.getElementById('dashboard-gate').classList.remove('hidden');
+    document.getElementById('dashboard-content').classList.add('hidden');
+  } else {
+    loadDashboard();
+  }
+
+  function loadDashboard() {
+    const hour = new Date().getHours();
+    const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    document.getElementById('dash-greeting').textContent = `${greeting}, ${user.name}`;
+    document.getElementById('d-rep').textContent = user.reputation || 0;
+    document.getElementById('d-wishes').textContent = user.reputation || 0;
+    document.getElementById('d-lessons').textContent = user.contributions || 0;
+    document.getElementById('d-saved').textContent = Saved.getAll().length;
+
+    // Pending submissions
+    const pending = JSON.parse(localStorage.getItem('tmm_submissions') || '[]');
+    if (pending.length) {
+      document.getElementById('pending-wrap').classList.remove('hidden');
+      document.getElementById('pending-list').innerHTML = pending.map(s => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
+          <div>
+            <div style="font-size:13.5px;font-weight:600;color:var(--text-primary);margin-bottom:3px">${s['s-title'] || 'Untitled lesson'}</div>
+            <div style="font-size:12px;color:var(--text-muted)">${s['s-category']} · Submitted ${new Date(s.submittedAt).toLocaleDateString()}</div>
+          </div>
+          <span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:#FEF9C3;color:#854D0E;border:1px solid #FDE047">Under review</span>
+        </div>
+      `).join('');
+    }
+  }
+</script>
+</body>
+</html>

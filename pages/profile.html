@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Profile — The Missing Manual</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+</head>
+<body>
+<div class="app-wrapper ready">
+  <div id="sb"></div>
+  <main class="main-content">
+    <div id="tb"></div>
+
+    <div id="noauth" class="hidden" style="padding:80px 44px;text-align:center">
+      <div style="font-size:40px;margin-bottom:16px">👤</div>
+      <h2 style="margin-bottom:8px">You're not signed in</h2>
+      <p style="margin-bottom:24px">Create an account to build your contributor profile.</p>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <a href="login.html" class="btn btn-ghost">Sign in</a>
+        <a href="signup.html" class="btn btn-primary">Create account</a>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="profile-cover"></div>
+      <div class="profile-header">
+        <div class="profile-avatar-row">
+          <div class="p-avatar" id="pa">?</div>
+          <div class="p-actions">
+            <button class="btn btn-ghost btn-sm" onclick="openEdit()">Edit profile</button>
+            <button class="btn btn-ghost btn-sm" onclick="doLogout()">Sign out</button>
+          </div>
+        </div>
+        <div class="p-name" id="pn">—</div>
+        <div class="p-handle" id="ph">—</div>
+        <div class="p-bio" id="pb">No bio yet.</div>
+        <div class="p-badges">
+          <span class="badge badge-blue">🏅 First Contribution</span>
+          <span class="badge badge-gold">⭐ Top Contributor</span>
+          <span class="badge badge-green">✅ Verified</span>
+        </div>
+        <div class="p-stats">
+          <div class="p-stat"><span class="n" id="ps-l">0</span><span class="l">Lessons</span></div>
+          <div class="p-stat"><span class="n" id="ps-w">0</span><span class="l">Wishes received</span></div>
+          <div class="p-stat"><span class="n" id="ps-r">0</span><span class="l">Reputation</span></div>
+        </div>
+      </div>
+
+      <div class="tabs-bar">
+        <div class="tab active" onclick="switchTab('contrib',this)">Contributions</div>
+        <div class="tab" onclick="switchTab('saved',this)">Saved</div>
+        <div class="tab" onclick="switchTab('settings',this)">Settings</div>
+      </div>
+
+      <div id="t-contrib" class="page" style="max-width:780px">
+        <div id="contrib-list"></div>
+        <div style="height:80px"></div>
+      </div>
+
+      <div id="t-saved" class="page hidden" style="max-width:780px">
+        <div id="saved-list"></div>
+        <div style="height:80px"></div>
+      </div>
+
+      <div id="t-settings" class="page hidden" style="max-width:520px">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-bottom:16px">
+          <div style="padding:18px 24px;border-bottom:1px solid var(--border)"><h3 style="font-size:14px">Account settings</h3></div>
+          <div style="padding:20px 24px;display:flex;flex-direction:column;gap:14px">
+            <div><label class="form-label" style="display:block">Display name</label><input class="form-input" id="s-nm" type="text"/></div>
+            <div><label class="form-label" style="display:block">Bio</label><textarea class="form-textarea" id="s-bio" rows="3"></textarea></div>
+            <button class="btn btn-primary btn-sm" style="align-self:flex-start" onclick="saveSettings()">Save changes</button>
+          </div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-bottom:16px">
+          <div style="padding:18px 24px;border-bottom:1px solid var(--border)"><h3 style="font-size:14px">Change password</h3></div>
+          <div style="padding:20px 24px;display:flex;flex-direction:column;gap:14px">
+            <div><label class="form-label" style="display:block">Current password</label><input class="form-input" id="s-cp" type="password" placeholder="••••••••"/></div>
+            <div><label class="form-label" style="display:block">New password</label><input class="form-input" id="s-np" type="password" placeholder="At least 8 characters"/></div>
+            <button class="btn btn-ghost btn-sm" style="align-self:flex-start" onclick="changePw()">Update password</button>
+          </div>
+        </div>
+        <div style="background:var(--surface);border:1.5px solid #FECACA;border-radius:var(--r-lg);overflow:hidden">
+          <div style="padding:18px 24px;border-bottom:1px solid #FECACA"><h3 style="font-size:14px;color:#DC2626">Danger zone</h3></div>
+          <div style="padding:20px 24px">
+            <p style="font-size:13px;color:var(--text-3);margin-bottom:14px">Deleting your account is permanent. Your lessons remain anonymized.</p>
+            <button class="btn btn-sm" style="background:#FEF2F2;color:#DC2626;border:1px solid #FECACA" onclick="delAccount()">Delete my account</button>
+          </div>
+        </div>
+        <div style="height:80px"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="overlay" id="editModal" onclick="if(event.target===this)closeEdit()">
+  <div class="modal">
+    <button class="modal-close" onclick="closeEdit()">✕</button>
+    <div class="modal-title">Edit profile</div>
+    <div class="modal-sub">Your lessons are always posted anonymously.</div>
+    <div class="form-group"><label class="form-label" style="display:block">Display name</label><input class="form-input" id="e-nm"/></div>
+    <div class="form-group"><label class="form-label" style="display:block">Bio</label><textarea class="form-textarea" id="e-bio" rows="3" placeholder="Tell the community about yourself"></textarea></div>
+    <button class="btn btn-primary" style="width:100%" onclick="saveEdit()">Save profile</button>
+  </div>
+</div>
+
+<div id="sm"></div>
+<div class="toast"></div>
+<div id="mn"></div>
+
+<script src="../js/app.js"></script>
+<script src="../js/api.js"></script>
+<script>
+  document.getElementById('sb').innerHTML = buildSidebar('');
+  document.getElementById('tb').innerHTML = buildTopbar();
+  document.getElementById('sm').innerHTML = buildShareModal();
+  document.getElementById('mn').innerHTML = buildMobileNav('profile');
+
+  var user = Auth.getUser();
+
+  if (!user) {
+    document.getElementById('noauth').classList.remove('hidden');
+    document.getElementById('content').classList.add('hidden');
+  } else {
+    loadProfile();
+    loadContributions();
+  }
+
+  function loadProfile() {
+    user = Auth.getUser();
+    document.getElementById('pa').textContent = user.initial;
+    document.getElementById('pn').textContent = user.name;
+    document.getElementById('ph').textContent = user.handle;
+    document.getElementById('pb').innerHTML = user.bio || '<span style="color:var(--text-3)">No bio yet. <span style="color:var(--indigo);cursor:pointer" onclick="openEdit()">Add one →</span></span>';
+    document.getElementById('ps-l').textContent = user.contributions || 0;
+    document.getElementById('ps-w').textContent = user.reputation || 0;
+    document.getElementById('ps-r').textContent = user.reputation || 0;
+    document.getElementById('s-nm').value = user.name;
+    document.getElementById('s-bio').value = user.bio || '';
+  }
+
+  function loadContributions() {
+    Api.getMySubmissions().then(function(lessons) {
+      var el = document.getElementById('contrib-list');
+      if (!lessons.length) {
+        el.innerHTML = '<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:48px;text-align:center"><div style="font-size:28px;margin-bottom:12px;opacity:.3">✍️</div><h3 style="font-size:15px;margin-bottom:6px">No contributions yet</h3><p style="font-size:13px;color:var(--text-3);margin-bottom:20px">Share your first hard-earned lesson.</p><a href="submit.html" class="btn btn-primary btn-sm">Submit a lesson</a></div>';
+        return;
+      }
+      el.innerHTML = '<div class="lesson-list">' + lessons.map(function(l) {
+        return '<div class="lesson-row"><div class="lesson-row-left"><div class="lesson-type">' + l.category + ' · ' + l.type + '</div><h3>' + l.title + '</h3><div class="lesson-row-meta"><span style="padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;background:' + (l.status==='approved'?'var(--green-light)':'#FEF9C3') + ';color:' + (l.status==='approved'?'var(--green)':'#854D0E') + '">' + l.status + '</span></div></div></div>';
+      }).join('') + '</div>';
+    }).catch(function() {});
+  }
+
+  function loadSaved() {
+    Api.getSavedLessons().then(function(lessons) {
+      var el = document.getElementById('saved-list');
+      if (!Array.isArray(lessons) || !lessons.length) {
+        el.innerHTML = '<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:48px;text-align:center"><div style="font-size:28px;margin-bottom:12px;opacity:.3">🔖</div><h3 style="font-size:15px;margin-bottom:6px">No saved lessons</h3><p style="font-size:13px;color:var(--text-3)">Save lessons as you read them.</p></div>';
+        return;
+      }
+      el.innerHTML = '<div class="lesson-list">' + lessons.map(function(l) {
+        return '<div class="lesson-row" onclick="location=\'manual.html?cat=' + l.category + '&lesson=' + l.id + '\'"><div class="lesson-row-left"><div class="lesson-type">' + l.category + ' · ' + l.type + '</div><h3>' + l.title + '</h3></div></div>';
+      }).join('') + '</div>';
+    }).catch(function() {});
+  }
+
+  function switchTab(t, el) {
+    ['contrib','saved','settings'].forEach(function(x) { document.getElementById('t-'+x).classList.add('hidden'); });
+    document.querySelectorAll('.tab').forEach(function(x) { x.classList.remove('active'); });
+    document.getElementById('t-'+t).classList.remove('hidden');
+    el.classList.add('active');
+    if (t === 'saved') loadSaved();
+  }
+
+  function openEdit() {
+    document.getElementById('e-nm').value = user.name;
+    document.getElementById('e-bio').value = user.bio || '';
+    document.getElementById('editModal').classList.add('open');
+  }
+  function closeEdit() { document.getElementById('editModal').classList.remove('open'); }
+
+  function saveEdit() {
+    var nm = document.getElementById('e-nm').value.trim();
+    var bio = document.getElementById('e-bio').value.trim();
+    if (!nm) { showToast('Name cannot be empty'); return; }
+    Api.updateProfile(nm, bio).then(function(res) {
+      if (res.error) { showToast(res.error); return; }
+      user.name = res.name; user.bio = res.bio; user.initial = res.name[0].toUpperCase();
+      localStorage.setItem('tmm_user', JSON.stringify(user));
+      loadProfile(); closeEdit(); showToast('Profile updated!');
+    });
+  }
+
+  function saveSettings() {
+    var nm = document.getElementById('s-nm').value.trim();
+    var bio = document.getElementById('s-bio').value.trim();
+    Api.updateProfile(nm, bio).then(function(res) {
+      if (res.error) { showToast(res.error); return; }
+      user.name = res.name; user.bio = res.bio; user.initial = res.name[0].toUpperCase();
+      localStorage.setItem('tmm_user', JSON.stringify(user));
+      loadProfile(); showToast('Settings saved!');
+    });
+  }
+
+  function changePw() {
+    var cp = document.getElementById('s-cp').value;
+    var np = document.getElementById('s-np').value;
+    if (!cp || !np) { showToast('Fill in both password fields'); return; }
+    if (np.length < 8) { showToast('New password must be 8+ characters'); return; }
+    Api.changePassword(cp, np).then(function(res) {
+      if (res.error) { showToast(res.error); return; }
+      showToast('Password updated!');
+      document.getElementById('s-cp').value = '';
+      document.getElementById('s-np').value = '';
+    });
+  }
+
+  function delAccount() {
+    if (confirm('Delete your account? This cannot be undone.')) {
+      Api.deleteAccount().then(function() {
+        Auth.logout();
+        location.href = '../index.html';
+      });
+    }
+  }
+
+  function doLogout() { Auth.logout(); location.href = '../index.html'; }
+</script>
+</body>
+</html>

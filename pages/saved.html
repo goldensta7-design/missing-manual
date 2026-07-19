@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Saved Lessons — The Missing Manual</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+<div class="app-wrapper ready">
+  <div id="sidebar-mount"></div>
+  <main class="main-content">
+    <div id="topbar-mount"></div>
+    <div class="page" style="max-width:780px">
+      <div style="margin-bottom:24px">
+        <h2 style="margin-bottom:4px">Saved lessons</h2>
+        <p style="font-size:14px">Lessons you've bookmarked for later.</p>
+      </div>
+      <div id="saved-mount"></div>
+      <div style="height:80px"></div>
+    </div>
+  </main>
+</div>
+<div class="toast"></div>
+<div id="mobile-nav-mount"></div>
+<script src="../js/app.js"></script><script src="../js/loader.js"></script>
+<script>
+  document.getElementById('sidebar-mount').innerHTML = buildSidebar('saved');
+  document.getElementById('topbar-mount').innerHTML = buildTopbar('Search saved lessons…');
+  document.getElementById('mobile-nav-mount').innerHTML = buildMobileNav('saved');
+
+  const savedIds = Saved.getAll();
+  const allLessons = Object.values(DATA.lessons).flat();
+  const savedLessons = allLessons.filter(l => savedIds.includes(l.id));
+  const mount = document.getElementById('saved-mount');
+
+  if (!savedLessons.length) {
+    mount.innerHTML = `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:60px;text-align:center">
+        <div style="font-size:32px;margin-bottom:14px;opacity:0.3">🔖</div>
+        <h3 style="font-size:15px;margin-bottom:6px">Nothing saved yet</h3>
+        <p style="font-size:13.5px;color:var(--text-muted);max-width:280px;margin:0 auto 20px">When you save a lesson, it appears here. Go explore the manuals.</p>
+        <a href="explore.html" class="btn btn-primary btn-sm">Browse manuals</a>
+      </div>`;
+  } else {
+    mount.innerHTML = `<div class="lesson-list">` + savedLessons.map(l => {
+      const cat = DATA.categories.find(c => c.id === l.category);
+      return `
+      <div class="lesson-row" onclick="window.location='manual.html?cat=${l.category}&lesson=${l.id}'">
+        <div class="lesson-row-left">
+          <div class="lesson-type"><span style="color:${cat?.color||''}">${cat?.icon||''}</span> ${cat?.name||''} · ${l.type}</div>
+          <h3>${l.title}</h3>
+          <p>${l.what_happened}</p>
+          <div class="lesson-row-meta">
+            <span>${icon('heart')} ${l.wishes}</span>
+            <span>${icon('comment')} ${l.comments}</span>
+            <span>Anonymous · ${l.time}</span>
+          </div>
+        </div>
+        <div class="lesson-row-right">
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();removeSaved('${l.id}', this)">Remove</button>
+        </div>
+      </div>`;
+    }).join('') + `</div>`;
+  }
+
+  function removeSaved(id, btn) {
+    Saved.toggle(id);
+    btn.closest('.lesson-row').remove();
+    showToast('Removed from saved');
+    if (!document.querySelector('.lesson-row')) {
+      mount.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted);font-size:13.5px">All cleared. Go save some more.</div>`;
+    }
+  }
+</script>
+</body>
+</html>

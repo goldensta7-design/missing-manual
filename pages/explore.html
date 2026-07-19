@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Explore — The Missing Manual</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+</head>
+<body>
+<div class="app-wrapper ready">
+  <div id="sb"></div>
+  <main class="main-content">
+    <div id="tb"></div>
+    <div class="page">
+      <div style="margin-bottom:24px">
+        <h2 style="margin-bottom:6px">All Manuals</h2>
+        <p style="font-size:14px">Every category. Every lesson. Find what you wish you'd known sooner.</p>
+      </div>
+      <div class="hero-search" style="max-width:480px;margin-bottom:28px">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4"/><path d="M11 11l3 3"/></svg>
+        <input type="text" id="q" placeholder="Search all lessons and manuals…" oninput="filter(this.value)"/>
+      </div>
+
+      <div class="section-header">
+        <div class="section-title">Manuals</div>
+        <span id="cc" style="font-size:12px;color:var(--text-muted)">8 categories</span>
+      </div>
+      <div class="category-grid" id="cats" style="margin-bottom:36px"></div>
+
+      <div class="section-header">
+        <div class="section-title">All Lessons</div>
+        <span id="lc" style="font-size:12px;color:var(--text-muted)"></span>
+      </div>
+      <div id="list" class="lesson-list"></div>
+      <div style="height:80px"></div>
+    </div>
+  </main>
+</div>
+<div id="sm"></div>
+<div class="toast"></div>
+<div id="mn"></div>
+
+<script src="../js/app.js"></script><script src="../js/loader.js"></script>
+<script>
+  document.getElementById('sb').innerHTML = buildSidebar('explore');
+  document.getElementById('tb').innerHTML = buildTopbar('Search all lessons…');
+  document.getElementById('sm').innerHTML = buildShareModal();
+  document.getElementById('mn').innerHTML = buildMobileNav('explore');
+
+  const allL = Object.values(DATA.lessons).flat();
+
+  function renderCats(cats){
+    document.getElementById('cc').textContent = `${cats.length} categories`;
+    document.getElementById('cats').innerHTML = cats.map(c=>`
+      <div class="cat-card" style="--c:${c.color}" onclick="location='manual.html?cat=${c.id}'">
+        <div class="cat-icon" style="background:${c.colorLight}">${c.icon}</div>
+        <h3>${c.name}</h3>
+        <p class="cat-desc">${c.desc}</p>
+        <div class="cat-meta"><span><strong>${c.lessons}</strong> lessons</span><span><strong>${c.contributors}</strong> people</span></div>
+      </div>`).join('');
+  }
+
+  function renderLessons(lessons){
+    document.getElementById('lc').textContent = `${lessons.length} lessons`;
+    if(!lessons.length){
+      document.getElementById('list').innerHTML=`<div style="text-align:center;padding:48px 20px"><div style="font-size:28px;margin-bottom:12px;opacity:.3">🔍</div><p style="color:var(--text-muted);font-size:14px">No lessons match that search.</p></div>`;
+      return;
+    }
+    document.getElementById('list').innerHTML = lessons.map(l=>{
+      const cat=DATA.categories.find(c=>c.id===l.category);
+      return `<div class="lesson-row" onclick="location='manual.html?cat=${l.category}&lesson=${l.id}'">
+        <div class="lesson-row-left">
+          <div class="lesson-type"><span style="color:${cat?.color||''}">${cat?.icon||''}</span>${cat?.name||''} · ${l.type}</div>
+          <h3>${l.title}</h3>
+          <p>${l.what_happened}</p>
+          <div class="lesson-row-meta">
+            <span>${ic('heart')} ${l.wishes}</span>
+            <span>${ic('comment')} ${l.comments}</span>
+            <span>Anonymous · ${l.time}</span>
+          </div>
+        </div>
+        <div class="lesson-row-right"><div class="wish-pill">❤ ${l.wishes}</div></div>
+      </div>`;
+    }).join('');
+  }
+
+  function filter(v){
+    if(!v.trim()){ renderCats(DATA.categories); renderLessons(allL); return; }
+    const q=v.toLowerCase();
+    renderCats(DATA.categories.filter(c=>c.name.toLowerCase().includes(q)||c.desc.toLowerCase().includes(q)));
+    renderLessons(allL.filter(l=>l.title.toLowerCase().includes(q)||l.what_happened.toLowerCase().includes(q)||l.type.toLowerCase().includes(q)||l.lesson.toLowerCase().includes(q)));
+  }
+
+  const urlQ = new URLSearchParams(location.search).get('q');
+  if(urlQ){ document.getElementById('q').value=urlQ; filter(urlQ); }
+  else { renderCats(DATA.categories); renderLessons(allL); }
+</script>
+</body>
+</html>

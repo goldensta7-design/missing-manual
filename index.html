@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>The Missing Manual — Everything People Wish They Knew Sooner</title>
+  <meta name="description" content="Learn from real mistakes, hidden lessons, and hard-earned experience before making your own."/>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+<div class="app-wrapper" id="app">
+  <div id="sb"></div>
+  <main class="main-content">
+    <div id="tb"></div>
+    <section class="hero">
+      <div class="hero-stripe"></div>
+      <div class="hero-glow"></div>
+      <div class="hero-glow-2"></div>
+      <div class="hero-eyebrow">Real experience. No theory.</div>
+      <h1>Everything People Wish They<br>Knew <em>Sooner</em></h1>
+      <p class="lead">Learn from real mistakes, hidden lessons, and hard-earned experience — before you make your own.</p>
+      <div class="hero-search">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4"/><path d="M11 11l3 3"/></svg>
+        <input type="text" id="hs" placeholder="What do you want the missing manual for?"/>
+        <button class="hero-search-btn" onclick="doSearch()">Search</button>
+      </div>
+      <div class="hero-hints">
+        <span class="hero-hint-label">Try:</span>
+        <span class="hero-tag" onclick="setS('Freelancing')">Freelancing</span>
+        <span class="hero-tag" onclick="setS('University')">University</span>
+        <span class="hero-tag" onclick="setS('NYSC')">NYSC</span>
+        <span class="hero-tag" onclick="setS('Job Hunting')">Job Hunting</span>
+        <span class="hero-tag" onclick="setS('Web Development')">Web Dev</span>
+      </div>
+    </section>
+
+    <div class="stats-bar">
+      <div class="stat-item"><span class="stat-num" style="color:#4338CA">1,847</span><span class="stat-label">Lessons shared</span></div>
+      <div class="stat-item"><span class="stat-num" style="color:#0F766E">342</span><span class="stat-label">Contributors</span></div>
+      <div class="stat-item"><span class="stat-num" style="color:#B91C1C">28k</span><span class="stat-label">Wishes</span></div>
+      <div class="stat-item"><span class="stat-num" style="color:#92400E">8</span><span class="stat-label">Categories</span></div>
+    </div>
+
+    <div class="page">
+      <div class="section-header"><div class="section-title">Browse Manuals</div><a href="pages/explore.html" class="section-link">See all →</a></div>
+      <div class="category-grid" id="cats"></div>
+      <div class="section-header mt-32"><div class="section-title">Most Wished Lessons</div><a href="pages/explore.html" class="section-link">See all →</a></div>
+      <div class="lesson-list" id="featured"></div>
+      <div class="section-header mt-32"><div class="section-title">Recently Added</div></div>
+      <div class="lesson-list" id="recent"></div>
+      <div style="height:80px"></div>
+    </div>
+  </main>
+</div>
+<div id="sm"></div>
+<div class="toast"></div>
+<div id="mn"></div>
+<script src="js/app.js"></script>
+<script src="js/loader.js"></script>
+<script>
+  document.getElementById('sb').innerHTML = buildSidebar('home');
+  document.getElementById('tb').innerHTML = buildTopbar('Search lessons and manuals…');
+  document.getElementById('sm').innerHTML = buildShareModal();
+  document.getElementById('mn').innerHTML = buildMobileNav('home');
+
+  document.getElementById('cats').innerHTML = DATA.categories.map(function(c){
+    return '<div class="cat-card" style="--c:'+c.color+'" onclick="location=\'pages/manual.html?cat='+c.id+'\'">'
+      +'<div class="cat-icon" style="background:'+c.colorLight+'">'+c.icon+'</div>'
+      +'<h3>'+c.name+'</h3><p class="cat-desc">'+c.desc+'</p>'
+      +'<div class="cat-meta"><span><strong>'+c.lessons+'</strong> lessons</span><span><strong>'+c.contributors+'</strong> people</span></div>'
+      +'</div>';
+  }).join('');
+
+  var all = Object.values(DATA.lessons).flat();
+  var topLessons = all.slice().sort(function(a,b){return b.wishes-a.wishes;}).slice(0,4);
+  var recentLessons = all.slice(-3).reverse();
+
+  function lRow(l){
+    var cat=DATA.categories.find(function(c){return c.id===l.category;});
+    return '<div class="lesson-row" onclick="location=\'pages/manual.html?cat='+l.category+'&lesson='+l.id+'\'">'
+      +'<div class="lesson-row-left">'
+      +'<div class="lesson-type" style="color:'+(cat?cat.color:'#888')+'">'+(cat?cat.icon:'')+' '+(cat?cat.name:'')+' &middot; '+l.type+'</div>'
+      +'<h3>'+l.title+'</h3><p>'+l.what_happened+'</p>'
+      +'<div class="lesson-row-meta"><span>&#9829; '+l.wishes+'</span><span>&#128172; '+l.comments+'</span><span>Anonymous &middot; '+l.time+'</span></div>'
+      +'</div><div class="lesson-row-right"><div class="wish-pill">&#10084; '+l.wishes+'</div></div></div>';
+  }
+
+  document.getElementById("featured").innerHTML = topLessons.map(lRow).join('');
+  document.getElementById("recent").innerHTML = recentLessons.map(lRow).join('');
+
+  function setS(v){document.getElementById('hs').value=v;doSearch();}
+  function doSearch(){
+    var v=document.getElementById('hs').value.trim();
+    if(!v)return;
+    var cat=DATA.categories.find(function(c){return c.name.toLowerCase().indexOf(v.toLowerCase())>-1;});
+    location.href=cat?'pages/manual.html?cat='+cat.id:'pages/explore.html?q='+encodeURIComponent(v);
+  }
+  document.getElementById('hs').addEventListener('keypress',function(e){if(e.key==='Enter')doSearch();});
+</script>
+</body>
+</html>
