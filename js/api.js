@@ -1,9 +1,7 @@
 // THE MISSING MANUAL — API Client
-// Points to local backend. Change to live URL when deployed.
 var API_URL = 'https://missing-manual-backend-production.up.railway.app/api';
 
 var Api = {
-  // ── AUTH ──────────────────────────────────────────────
   register: function(name, email, password) {
     return fetch(API_URL + '/auth/register', {
       method: 'POST',
@@ -54,7 +52,6 @@ var Api = {
     }).then(function(r) { return r.json(); });
   },
 
-  // ── LESSONS ───────────────────────────────────────────
   getLessons: function(category, type, page) {
     var params = new URLSearchParams();
     if (category) params.set('category', category);
@@ -104,29 +101,26 @@ var Api = {
   }
 };
 
-// ── AUTH HELPERS ─────────────────────────────────────────
-var Auth = {
-  isLoggedIn: function() {
-    return !!localStorage.getItem('tmm_token');
-  },
-  getUser: function() {
-    return JSON.parse(localStorage.getItem('tmm_user') || 'null');
-  },
-  setUser: function(token, user) {
-    localStorage.clear();
-    localStorage.setItem('tmm_token', token);
-    var u = {
-      name: user.name,
-      email: user.email,
-      handle: user.handle,
-      initial: user.name[0].toUpperCase(),
-      bio: user.bio || '',
-      reputation: user.reputation || 0,
-      contributions: user.contributions || 0
-    };
-    localStorage.setItem('tmm_user', JSON.stringify(u));
-  },
-  logout: function() {
-    localStorage.clear();
-  }
+// Override Auth from app.js to use real token-based auth
+Auth.setUser = function(token, user) {
+  localStorage.clear();
+  localStorage.setItem('tmm_token', token);
+  var u = {
+    name: user.name,
+    email: user.email,
+    handle: user.handle,
+    initial: user.name[0].toUpperCase(),
+    bio: user.bio || '',
+    reputation: user.reputation || 0,
+    contributions: user.contributions || 0
+  };
+  localStorage.setItem('tmm_user', JSON.stringify(u));
+};
+
+Auth.isLoggedIn = function() {
+  return !!localStorage.getItem('tmm_token');
+};
+
+Auth.logout = function() {
+  localStorage.clear();
 };
