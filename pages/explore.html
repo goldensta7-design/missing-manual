@@ -40,14 +40,24 @@
 <div class="toast"></div>
 <div id="mn"></div>
 
-<script src="../js/app.js"></script><script src="../js/loader.js"></script>
+<script src="../js/app.js"></script><script src="../js/api.js"></script><script src="../js/loader.js"></script>
 <script>
   document.getElementById('sb').innerHTML = buildSidebar('explore');
   document.getElementById('tb').innerHTML = buildTopbar('Search all lessons…');
   document.getElementById('sm').innerHTML = buildShareModal();
   document.getElementById('mn').innerHTML = buildMobileNav('explore');
 
-  const allL = Object.values(DATA.lessons).flat();
+  let allL = [];
+  document.getElementById('list').innerHTML = `<div style="text-align:center;padding:48px 20px;color:var(--text-muted);font-size:14px">Loading lessons…</div>`;
+
+  function timeAgo(iso){
+    const s = Math.floor((Date.now() - new Date(iso).getTime())/1000);
+    if(s<60) return 'just now';
+    if(s<3600) return Math.floor(s/60)+'m ago';
+    if(s<86400) return Math.floor(s/3600)+'h ago';
+    if(s<2592000) return Math.floor(s/86400)+'d ago';
+    return Math.floor(s/2592000)+'mo ago';
+  }
 
   function renderCats(cats){
     document.getElementById('cc').textContent = `${cats.length} categories`;
@@ -68,18 +78,20 @@
     }
     document.getElementById('list').innerHTML = lessons.map(l=>{
       const cat=DATA.categories.find(c=>c.id===l.category);
+      const wishes = l._count ? l._count.wishes : 0;
+      const comments = l._count ? l._count.comments : 0;
       return `<div class="lesson-row" onclick="location='manual.html?cat=${l.category}&lesson=${l.id}'">
         <div class="lesson-row-left">
           <div class="lesson-type"><span style="color:${cat?.color||''}">${cat?.icon||''}</span>${cat?.name||''} · ${l.type}</div>
           <h3>${l.title}</h3>
-          <p>${l.what_happened}</p>
+          <p>${l.whatHappened}</p>
           <div class="lesson-row-meta">
-            <span>${ic('heart')} ${l.wishes}</span>
-            <span>${ic('comment')} ${l.comments}</span>
-            <span>Anonymous · ${l.time}</span>
+            <span>${ic('heart')} ${wishes}</span>
+            <span>${ic('comment')} ${comments}</span>
+            <span>Anonymous · ${timeAgo(l.createdAt)}</span>
           </div>
         </div>
-        <div class="lesson-row-right"><div class="wish-pill">❤ ${l.wishes}</div></div>
+        <div class="lesson-row-right"><div class="wish-pill">❤ ${wishes}</div></div>
       </div>`;
     }).join('');
   }
@@ -88,12 +100,17 @@
     if(!v.trim()){ renderCats(DATA.categories); renderLessons(allL); return; }
     const q=v.toLowerCase();
     renderCats(DATA.categories.filter(c=>c.name.toLowerCase().includes(q)||c.desc.toLowerCase().includes(q)));
-    renderLessons(allL.filter(l=>l.title.toLowerCase().includes(q)||l.what_happened.toLowerCase().includes(q)||l.type.toLowerCase().includes(q)||l.lesson.toLowerCase().includes(q)));
+    renderLessons(allL.filter(l=>l.title.toLowerCase().includes(q)||l.whatHappened.toLowerCase().includes(q)||l.type.toLowerCase().includes(q)||l.lesson.toLowerCase().includes(q)));
   }
 
-  const urlQ = new URLSearchParams(location.search).get('q');
-  if(urlQ){ document.getElementById('q').value=urlQ; filter(urlQ); }
-  else { renderCats(DATA.categories); renderLessons(allL); }
+  Api.getLessons().then(function(res){
+    allL = res.lessons || [];
+    const urlQ = new URLSearchParams(location.search).get('q');
+    if(urlQ){ document.getElementById('q').value=urlQ; filter(urlQ); }
+    else { renderCats(DATA.categories); renderLessons(allL); }
+  }).catch(function(){
+    document.getElementById('list').innerHTML = `<div style="text-align:center;padding:48px 20px;color:var(--text-muted);font-size:14px">Could not load lessons. Check your connection.</div>`;
+  });
 </script>
 </body>
 </html>
