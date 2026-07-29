@@ -147,9 +147,24 @@
         return;
       }
       el.innerHTML = '<div class="lesson-list">' + lessons.map(function(l) {
-        return '<div class="lesson-row"><div class="lesson-row-left"><div class="lesson-type">' + l.category + ' · ' + l.type + '</div><h3>' + l.title + '</h3><div class="lesson-row-meta"><span style="padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;background:' + (l.status==='approved'?'var(--green-light)':'#FEF9C3') + ';color:' + (l.status==='approved'?'var(--green)':'#854D0E') + '">' + l.status + '</span></div></div></div>';
+        return '<div class="lesson-row"><div class="lesson-row-left"><div class="lesson-type">' + l.category + ' · ' + l.type + '</div><h3>' + l.title + '</h3><div class="lesson-row-meta"><span style="padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;background:' + (l.status==='approved'?'var(--green-light)':'#FEF9C3') + ';color:' + (l.status==='approved'?'var(--green)':'#854D0E') + '">' + l.status + '</span></div></div><div class="lesson-row-right"><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();deleteLesson(\'' + l.id + '\', this)">Delete</button></div></div>';
       }).join('') + '</div>';
     }).catch(function() {});
+  }
+
+  function deleteLesson(id, btn) {
+    if (!confirm('Delete this lesson? This cannot be undone.')) return;
+    Api.deleteLesson(id).then(function(res) {
+      if (res.error) { showToast(res.error); return; }
+      btn.closest('.lesson-row').remove();
+      showToast('Lesson deleted');
+      user.contributions = Math.max(0, (user.contributions || 1) - 1);
+      localStorage.setItem('tmm_user', JSON.stringify(user));
+      loadProfile();
+      if (!document.querySelector('#contrib-list .lesson-row')) {
+        loadContributions();
+      }
+    }).catch(function() { showToast('Could not delete lesson'); });
   }
 
   function loadSaved() {

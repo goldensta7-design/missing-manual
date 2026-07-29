@@ -98,6 +98,14 @@ var Api = {
     return fetch(API_URL + '/lessons/user/submissions', {
       headers: { 'Authorization': 'Bearer ' + token }
     }).then(function(r) { return r.json(); });
+  },
+
+  deleteLesson: function(id) {
+    var token = localStorage.getItem('tmm_token');
+    return fetch(API_URL + '/lessons/' + id, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + token }
+    }).then(function(r) { return r.json(); });
   }
 };
 
