@@ -124,6 +124,14 @@
   } else {
     loadProfile();
     loadContributions();
+    Api.getMe().then(function(res) {
+      if (res && !res.error) {
+        user.contributions = res.contributions || 0;
+        user.reputation = res.reputation || 0;
+        localStorage.setItem('tmm_user', JSON.stringify(user));
+        loadProfile();
+      }
+    }).catch(function() {});
   }
 
   function loadProfile() {
