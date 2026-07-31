@@ -20,13 +20,13 @@
 <div class="toast"></div>
 <div id="mn"></div>
 
-<script src="../js/app.js"></script><script src="../js/loader.js"></script>
+<script src="../js/app.js"></script><script src="../js/api.js"></script><script src="../js/loader.js"></script>
 <script>
   const P = new URLSearchParams(location.search);
   const catId = P.get('cat') || 'freelancing';
   const focusId = P.get('lesson');
   const cat = DATA.categories.find(c=>c.id===catId) || DATA.categories[0];
-  const lessons = DATA.lessons[cat.id] || [];
+  let lessons = [];
 
   document.title = `${cat.name} Manual — The Missing Manual`;
   document.getElementById('sb').innerHTML = buildSidebar('');
@@ -34,22 +34,31 @@
   document.getElementById('sm').innerHTML = buildShareModal();
   document.getElementById('mn').innerHTML = buildMobileNav('explore');
 
-  document.getElementById('mh').innerHTML = `
-    <div class="manual-hero">
-      <div class="breadcrumb"><a href="../index.html">Home</a> › <a href="explore.html">Manuals</a> › <span>${cat.name}</span></div>
-      <h1>${cat.icon} Missing Manual for ${cat.name}</h1>
-      <p class="lead">Real lessons from people who learned the hard way. No theory, no fluff — only what actually happened. All submissions are anonymous.</p>
-      <div class="manual-actions">
-        <button class="btn btn-primary" onclick="location='submit.html'">${ic('plus')} Add your lesson</button>
-        <button class="btn btn-ghost" onclick="openShare('Missing Manual for ${cat.name}',location.href)">${ic('share')} Share</button>
-        <button class="btn btn-ghost" id="followBtn" onclick="toggleFollow()">Follow manual</button>
-      </div>
-      <div class="manual-stats">
-        <span class="manual-stat">${ic('heart')} <strong>${lessons.length}</strong> lessons</span>
-        <span class="manual-stat">${ic('user')} <strong>${cat.contributors}</strong> contributors</span>
-        <span class="manual-stat">${ic('star')} <strong>${cat.lessons*7}</strong> total wishes</span>
-      </div>
-    </div>`;
+  function timeAgo(iso){
+    const s = Math.floor((Date.now() - new Date(iso).getTime())/1000);
+    if(s<60) return 'just now';
+    if(s<3600) return Math.floor(s/60)+'m ago';
+    if(s<86400) return Math.floor(s/3600)+'h ago';
+    if(s<2592000) return Math.floor(s/86400)+'d ago';
+    return Math.floor(s/2592000)+'mo ago';
+  }
+
+  function renderHero(){
+    document.getElementById('mh').innerHTML = `
+      <div class="manual-hero">
+        <div class="breadcrumb"><a href="../index.html">Home</a> › <a href="explore.html">Manuals</a> › <span>${cat.name}</span></div>
+        <h1>${cat.icon} Missing Manual for ${cat.name}</h1>
+        <p class="lead">Real lessons from people who learned the hard way. No theory, no fluff — only what actually happened. All submissions are anonymous.</p>
+        <div class="manual-actions">
+          <button class="btn btn-primary" onclick="location='submit.html'">${ic('plus')} Add your lesson</button>
+          <button class="btn btn-ghost" onclick="openShare('Missing Manual for ${cat.name}',location.href)">${ic('share')} Share</button>
+          <button class="btn btn-ghost" id="followBtn" onclick="toggleFollow()">Follow manual</button>
+        </div>
+        <div class="manual-stats">
+          <span class="manual-stat">${ic('heart')} <strong>${lessons.length}</strong> lessons</span>
+        </div>
+      </div>`;
+  }
 
   const TYPES = ['All','Things Nobody Tells You','Costly Mistakes','Red Flags','Time Savers','Regrets From Experience','Best Advice Received'];
   let activeType = 'All';
@@ -85,8 +94,8 @@
   }
 
   function buildCard(l){
-    const wished = Wishes.has(l.id);
-    const saved  = Saved.has(l.id);
+    const wishes = l._count ? l._count.wishes : 0;
+    const comments = l._count ? l._count.comments : 0;
     return `<div class="lesson-card" id="lc-${l.id}">
       <div class="lesson-card-head">
         <span class="section-badge">${l.type}</span>
@@ -99,7 +108,7 @@
         </div>
         <div class="lesson-block">
           <span class="block-label">What happened</span>
-          <div class="block-lesson"><p>${l.what_happened}</p></div>
+          <div class="block-lesson"><p>${l.whatHappened}</p></div>
         </div>
         <div class="lesson-block">
           <span class="block-label">The lesson</span>
@@ -112,14 +121,14 @@
       <div class="lesson-card-foot">
         <div class="lesson-author">
           <div class="avatar" style="width:26px;height:26px;font-size:11px;background:var(--surface-2);color:var(--text-muted)">?</div>
-          <div><div class="a-name">Anonymous</div><div class="a-time">${l.time}</div></div>
+          <div><div class="a-name">Anonymous</div><div class="a-time">${timeAgo(l.createdAt)}</div></div>
         </div>
         <div class="lesson-foot-actions">
-          <button class="wish-btn ${wished?'active':''}" id="wb-${l.id}" onclick="toggleWish('${l.id}',this)">
-            ${ic('heart')} <span id="wc-${l.id}">${l.wishes+(wished?1:0)} I Wish I Knew This</span>
+          <button class="wish-btn" id="wb-${l.id}" onclick="toggleWish('${l.id}',this)">
+            ${ic('heart')} <span id="wc-${l.id}">${wishes} I Wish I Knew This</span>
           </button>
           <button class="btn btn-ghost btn-sm" id="sb-${l.id}" onclick="toggleSave('${l.id}',this)">
-            ${ic('bookmark')} ${saved?'Saved':'Save'}
+            ${ic('bookmark')} Save
           </button>
           <button class="btn btn-ghost btn-sm" onclick="openShare('${l.title.replace(/'/g,"\\'")}',location.href+'&lesson=${l.id}')">
             ${ic('share')}
@@ -131,18 +140,24 @@
 
   function toggleWish(id, btn){
     if(!Auth.isLoggedIn()){ location.href='login.html'; return; }
-    const added = Wishes.toggle(id);
-    const base = Object.values(DATA.lessons).flat().find(l=>l.id===id)?.wishes||0;
-    document.getElementById(`wc-${id}`).textContent = `${base+(added?1:0)} I Wish I Knew This`;
-    btn.classList.toggle('active', added);
-    showToast(added?'Wish added!':'Wish removed');
+    Api.wishLesson(id).then(function(res){
+      if(res.error){ showToast(res.error); return; }
+      const span = document.getElementById(`wc-${id}`);
+      const current = parseInt(span.textContent) || 0;
+      const next = res.wished ? current+1 : Math.max(0, current-1);
+      span.textContent = `${next} I Wish I Knew This`;
+      btn.classList.toggle('active', res.wished);
+      showToast(res.wished?'Wish added!':'Wish removed');
+    }).catch(function(){ showToast('Could not connect to server'); });
   }
 
   function toggleSave(id, btn){
     if(!Auth.isLoggedIn()){ location.href='login.html'; return; }
-    const added = Saved.toggle(id);
-    btn.innerHTML = `${ic('bookmark')} ${added?'Saved':'Save'}`;
-    showToast(added?'Lesson saved!':'Removed from saved');
+    Api.saveLesson(id).then(function(res){
+      if(res.error){ showToast(res.error); return; }
+      btn.innerHTML = `${ic('bookmark')} ${res.saved?'Saved':'Save'}`;
+      showToast(res.saved?'Lesson saved!':'Removed from saved');
+    }).catch(function(){ showToast('Could not connect to server'); });
   }
 
   function toggleFollow(){
@@ -153,7 +168,14 @@
     showToast(now==='Unfollow manual' ? 'Unfollowed' : `Following ${cat.name} manual`);
   }
 
-  render();
+  document.getElementById('lessons').innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--text-muted);font-size:14px">Loading lessons…</div>`;
+  Api.getLessons(cat.id).then(function(res){
+    lessons = res.lessons || [];
+    renderHero();
+    render();
+  }).catch(function(){
+    document.getElementById('lessons').innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--text-muted);font-size:14px">Could not load lessons. Check your connection.</div>`;
+  });
 </script>
 </body>
 </html>
