@@ -271,6 +271,7 @@ function buildSidebar(active){
       ${u?`<div class="nav-section">
         <span class="nav-section-label">You</span>
         <a href="${root}pages/dashboard.html" class="nav-link ${active==='dashboard'?'active':''}">${ic('chart')} Dashboard</a>
+        <a href="${root}pages/messages.html" class="nav-link ${active==='messages'?'active':''}">${ic('message')} Messages<span class="count msg-unread-badge hidden" id="msg-badge-sidebar" style="background:#FEF2EE;color:#C84B31">0</span></a>
         <a href="${root}pages/saved.html" class="nav-link ${active==='saved'?'active':''}">${ic('bookmark')} Saved</a>
         <a href="${root}pages/notifications.html" class="nav-link ${active==='notif'?'active':''}">${ic('bell')} Notifications <span class="count" style="background:#FEF2EE;color:#C84B31">3</span></a>
       </div>`:''}
@@ -316,6 +317,7 @@ function buildMobileNav(active){
     <div class="m-nav-item ${active==='home'?'active':''}" onclick="window.location='${root}index.html'">${ic('home')}<span>Home</span></div>
     <div class="m-nav-item ${active==='explore'?'active':''}" onclick="window.location='${root}pages/explore.html'">${ic('grid')}<span>Explore</span></div>
     <div class="m-nav-item ${active==='submit'?'active':''}" onclick="window.location='${root}pages/submit.html'">${ic('plus')}<span>Submit</span></div>
+    <div class="m-nav-item ${active==='messages'?'active':''}" style="position:relative" onclick="window.location='${root}pages/messages.html'">${ic('message')}<span>Messages</span><span class="msg-unread-badge hidden" id="msg-badge-mobile" style="position:absolute;top:2px;right:10px;width:7px;height:7px;background:var(--crimson,#B91C1C);border-radius:50%;border:1.5px solid var(--surface)"></span></div>
     <div class="m-nav-item ${active==='saved'?'active':''}" onclick="window.location='${root}pages/saved.html'">${ic('bookmark')}<span>Saved</span></div>
     <div class="m-nav-item ${active==='profile'?'active':''}" onclick="window.location='${root}pages/profile.html'">${ic('user')}<span>Profile</span></div>
   </div></nav>`;
@@ -361,6 +363,8 @@ function ic(n){
     share:`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="3" r="1.5"/><circle cx="12" cy="13" r="1.5"/><circle cx="4" cy="8" r="1.5"/><path d="M10.5 3.9L5.5 7M5.5 9l5 3.1"/></svg>`,
     check:`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8l3.5 3.5L13 4"/></svg>`,
     star:`<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l1.854 4.146L14 5.618l-3 3.09.708 4.292L8 10.618l-3.708 2.382.708-4.292-3-3.09 4.146-.472z"/></svg>`,
+    message:`<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h12a1 1 0 011 1v6a1 1 0 01-1 1H5l-3 3V4a1 1 0 011-1z"/></svg>`,
+    send:`<svg viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 14.5L14.8 8.4a.5.5 0 000-.9L1.5 1.4a.5.5 0 00-.7.6l2 6L1 14a.5.5 0 00.5.9zM3.4 8L2 3.7 12 8l-10 4.3L3.4 8z"/></svg>`,
   };
   return I[n]||'';
 }
@@ -379,5 +383,37 @@ function toggleTheme() {
 (function() {
   if (localStorage.getItem('tmm_theme') === 'dark') {
     document.body.classList.add('dark');
+  }
+})();
+
+// ── UNREAD MESSAGE BADGE POLLING ───────────────────────────
+// Updates any element with class "msg-unread-badge" (sidebar + mobile nav).
+// Safe on pages that don't load api.js, and on logged-out visitors.
+(function() {
+  function paintBadge(count) {
+    var els = document.querySelectorAll('.msg-unread-badge');
+    for (var i = 0; i < els.length; i++) {
+      var el = els[i];
+      if (count > 0) {
+        el.classList.remove('hidden');
+        if (el.tagName === 'SPAN' && el.id === 'msg-badge-sidebar') el.textContent = count;
+      } else {
+        el.classList.add('hidden');
+      }
+    }
+  }
+
+  function poll() {
+    if (typeof Api === 'undefined' || typeof Auth === 'undefined' || !Auth.isLoggedIn()) return;
+    Api.getUnreadMessageCount().then(function(res) {
+      paintBadge(res && res.count ? res.count : 0);
+    }).catch(function() {});
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() { poll(); setInterval(poll, 12000); });
+  } else {
+    poll();
+    setInterval(poll, 12000);
   }
 })();

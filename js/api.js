@@ -106,6 +106,48 @@ var Api = {
       method: 'DELETE',
       headers: { 'Authorization': 'Bearer ' + token }
     }).then(function(r) { return r.json(); });
+  },
+
+  // ── MESSAGING ──────────────────────────────────────────────
+  // data: { lessonId, content } to start/continue a thread with a lesson's
+  // author, OR { conversationId, content } to reply in an existing thread.
+  sendMessage: function(data) {
+    var token = localStorage.getItem('tmm_token');
+    return fetch(API_URL + '/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify(data)
+    }).then(function(r) { return r.json(); });
+  },
+
+  getConversations: function() {
+    var token = localStorage.getItem('tmm_token');
+    return fetch(API_URL + '/messages/conversations', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    }).then(function(r) { return r.json(); });
+  },
+
+  getConversation: function(id) {
+    var token = localStorage.getItem('tmm_token');
+    return fetch(API_URL + '/messages/conversations/' + id, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    }).then(function(r) { return r.json(); });
+  },
+
+  markConversationRead: function(id) {
+    var token = localStorage.getItem('tmm_token');
+    return fetch(API_URL + '/messages/conversations/' + id + '/read', {
+      method: 'PUT',
+      headers: { 'Authorization': 'Bearer ' + token }
+    }).then(function(r) { return r.json(); });
+  },
+
+  getUnreadMessageCount: function() {
+    var token = localStorage.getItem('tmm_token');
+    if (!token) return Promise.resolve({ count: 0 });
+    return fetch(API_URL + '/messages/unread-count', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    }).then(function(r) { return r.json(); });
   }
 };
 

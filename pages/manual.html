@@ -130,6 +130,9 @@
           <button class="btn btn-ghost btn-sm" id="sb-${l.id}" onclick="toggleSave('${l.id}',this)">
             ${ic('bookmark')} Save
           </button>
+          <button class="btn btn-ghost btn-sm" onclick="messageAuthor('${l.id}','${l.title.replace(/'/g,"\\'")}')">
+            ${ic('message')} Message
+          </button>
           <button class="btn btn-ghost btn-sm" onclick="openShare('${l.title.replace(/'/g,"\\'")}',location.href+'&lesson=${l.id}')">
             ${ic('share')}
           </button>
@@ -158,6 +161,11 @@
       btn.innerHTML = `${ic('bookmark')} ${res.saved?'Saved':'Save'}`;
       showToast(res.saved?'Lesson saved!':'Removed from saved');
     }).catch(function(){ showToast('Could not connect to server'); });
+  }
+
+  function messageAuthor(lessonId, title){
+    if(!Auth.isLoggedIn()){ location.href='login.html'; return; }
+    location.href = 'messages.html?lesson=' + encodeURIComponent(lessonId) + '&title=' + encodeURIComponent(title);
   }
 
   function toggleFollow(){
