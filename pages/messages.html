@@ -5,119 +5,199 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>Messages — The Missing Manual</title>
   <link rel="stylesheet" href="../css/style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <style>
-    /* Scoped to this page. Every color/spacing token below is one already
-       defined in css/style.css — nothing new is added to that file. */
-    .msg-wrap{display:flex;height:calc(100vh - 61px);border-top:1px solid var(--border)}
-    .msg-list-panel{width:320px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;background:var(--surface)}
-    .msg-list-head{padding:18px 20px;border-bottom:1px solid var(--border)}
-    .msg-list-head h2{font-size:1.25rem}
-    .msg-list{flex:1;overflow-y:auto}
-    .msg-row{display:flex;align-items:flex-start;gap:12px;padding:14px 20px;cursor:pointer;border-bottom:1px solid var(--border);transition:var(--ease)}
-    .msg-row:hover{background:var(--surface-2)}
-    .msg-row.active{background:var(--indigo-soft)}
-    .msg-row-avatar{width:36px;height:36px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;color:var(--text-3)}
-    .msg-row-body{flex:1;min-width:0}
-    .msg-row-lesson{font-size:11px;font-weight:700;color:var(--indigo);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .msg-row-preview{font-size:13px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .msg-row.unread .msg-row-preview{color:var(--text-1);font-weight:600}
-    .msg-row-time{font-size:11px;color:var(--text-3);flex-shrink:0;margin-top:2px}
-    .msg-row-dot{width:8px;height:8px;border-radius:50%;background:var(--crimson);flex-shrink:0;margin-top:5px}
-    .msg-empty{padding:48px 24px;text-align:center;color:var(--text-3);font-size:13.5px}
+    /* ============================================================
+       Scoped to this page only. Site-wide css/style.css untouched.
+       Visual language matches the reference "Squad Chat" build:
+       dark glassmorphism, gradient bubbles, ambient orbs, DM Sans /
+       Syne type. Data underneath is 100% the real backend — nothing
+       here is fake, this is only the paint job.
+       ============================================================ */
+    :root{
+      --mm-bg-dark:#07090f; --mm-glass-bg:rgba(12,16,28,.55); --mm-glass-border:rgba(255,255,255,.07);
+      --mm-accent-1:#7c6dfa; --mm-accent-2:#00d4ff; --mm-accent-grad:linear-gradient(135deg,#7c6dfa,#00d4ff);
+      --mm-sent-bg:linear-gradient(135deg,#7c6dfa 0%,#5b8dee 100%); --mm-recv-bg:rgba(255,255,255,.06);
+      --mm-text-1:#f0f2ff; --mm-text-2:#8b90b8; --mm-text-3:#4a4f72;
+      --mm-online:#00e676; --mm-radius-lg:20px; --mm-radius-md:14px;
+      --mm-ease:.22s cubic-bezier(.4,0,.2,1);
+    }
+    #msg-root{position:fixed;inset:0;z-index:50;font-family:'DM Sans',sans-serif;font-size:15px;color:var(--mm-text-1)}
+    #msg-root .bg-layer{position:absolute;inset:0;z-index:0}
+    #msg-root .bg-base{position:absolute;inset:0;background:radial-gradient(ellipse at top,#141a30,var(--mm-bg-dark) 70%)}
+    #msg-root .bg-overlay{position:absolute;inset:0;background:linear-gradient(135deg,rgba(5,5,20,.88) 0%,rgba(10,8,35,.82) 50%,rgba(5,18,35,.9) 100%)}
+    #msg-root .bg-orbs{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+    #msg-root .orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.18;animation:mmFloat 12s ease-in-out infinite alternate}
+    #msg-root .orb-1{width:500px;height:500px;background:#7c6dfa;top:-100px;left:-100px;animation-duration:14s}
+    #msg-root .orb-2{width:400px;height:400px;background:#00d4ff;bottom:-80px;right:10%;animation-duration:10s;animation-delay:-4s}
+    #msg-root .orb-3{width:300px;height:300px;background:#e040fb;top:40%;left:35%;animation-duration:18s;animation-delay:-8s}
+    @keyframes mmFloat{from{transform:translateY(0) scale(1)}to{transform:translateY(-40px) scale(1.08)}}
 
-    .msg-thread-panel{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg)}
-    .msg-thread-head{padding:14px 24px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;gap:12px}
-    .msg-back-btn{display:none;background:none;border:none;cursor:pointer;color:var(--text-2);padding:4px;font-size:16px}
-    .msg-thread-title{font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .msg-thread-sub{font-size:11.5px;color:var(--text-3)}
-    .msg-thread-link{font-size:12px;color:var(--indigo);font-weight:600;margin-left:auto;white-space:nowrap}
-    .msg-body{flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:10px}
-    .msg-bubble{max-width:70%;padding:10px 14px;border-radius:var(--r-lg);font-size:13.5px;line-height:1.55;word-wrap:break-word}
-    .msg-bubble.mine{align-self:flex-end;background:var(--indigo);color:#fff;border-bottom-right-radius:4px}
-    .msg-bubble.theirs{align-self:flex-start;background:var(--surface);border:1px solid var(--border);color:var(--text-1);border-bottom-left-radius:4px}
-    .msg-bubble-time{display:block;font-size:10px;margin-top:4px;opacity:.65}
-    .msg-input-row{padding:14px 20px;border-top:1px solid var(--border);background:var(--surface);display:flex;gap:10px;align-items:flex-end}
-    .msg-input-row textarea{flex:1;resize:none;border:1.5px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;font-size:13.5px;font-family:inherit;color:var(--text-1);background:var(--surface);outline:none;max-height:120px}
-    .msg-input-row textarea:focus{border-color:var(--indigo);box-shadow:0 0 0 3px var(--indigo-soft)}
-    .msg-send-btn{width:38px;height:38px;border-radius:50%;background:var(--indigo);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:none;cursor:pointer;transition:var(--ease)}
-    .msg-send-btn:hover{background:var(--indigo-2)}
-    .msg-send-btn svg{width:15px;height:15px}
-    .msg-thread-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-3);gap:8px;text-align:center;padding:24px}
-    .msg-pending-note{font-size:12px;color:var(--text-3);text-align:center;padding:8px 20px 0}
+    .mm-shell{position:relative;z-index:1;display:flex;height:100dvh;width:100%;padding:16px;gap:16px}
+    .mm-close{position:absolute;top:18px;right:20px;z-index:5;width:36px;height:36px;border-radius:10px;background:rgba(12,16,28,.9);border:1px solid var(--mm-glass-border);color:var(--mm-text-1);display:flex;align-items:center;justify-content:center;cursor:pointer;text-decoration:none;font-size:15px}
+
+    .mm-list-panel,.mm-thread-panel{background:var(--mm-glass-bg);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid var(--mm-glass-border);border-radius:var(--mm-radius-lg);box-shadow:0 8px 40px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.05)}
+    .mm-list-panel{width:320px;min-width:320px;display:flex;flex-direction:column;overflow:hidden}
+    .mm-list-head{padding:20px 20px 14px;border-bottom:1px solid var(--mm-glass-border)}
+    .mm-list-head h1{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;background:var(--mm-accent-grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .mm-list{flex:1;overflow-y:auto;padding:6px 8px}
+    .mm-list::-webkit-scrollbar{width:4px}
+    .mm-list::-webkit-scrollbar-thumb{background:rgba(124,109,250,.3);border-radius:4px}
+
+    .mm-row{display:flex;align-items:center;gap:11px;padding:10px;border-radius:var(--mm-radius-md);cursor:pointer;transition:background var(--mm-ease),transform var(--mm-ease);position:relative}
+    .mm-row:hover{background:rgba(255,255,255,.05);transform:translateX(2px)}
+    .mm-row.active{background:rgba(124,109,250,.15);border:1px solid rgba(124,109,250,.25)}
+    .mm-row.active::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;background:var(--mm-accent-grad);border-radius:0 3px 3px 0}
+    .mm-row-avatar{width:42px;height:42px;border-radius:50%;background:#1a1d30;border:2px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+    .mm-row-body{flex:1;min-width:0}
+    .mm-row-lesson{font-size:11px;font-weight:700;color:var(--mm-accent-2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .mm-row-preview{font-size:13px;color:var(--mm-text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .mm-row.unread .mm-row-preview{color:var(--mm-text-1);font-weight:600}
+    .mm-row-meta{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+    .mm-row-time{font-size:10.5px;color:var(--mm-text-3)}
+    .mm-row-dot{width:9px;height:9px;border-radius:50%;background:var(--mm-accent-grad);box-shadow:0 0 6px rgba(124,109,250,.6)}
+    .mm-empty{padding:40px 20px;text-align:center;color:var(--mm-text-3);font-size:13.5px;line-height:1.7}
+
+    .mm-thread-panel{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
+    .mm-thread-head{display:flex;align-items:center;gap:12px;padding:0 22px;height:68px;border-bottom:1px solid var(--mm-glass-border);background:rgba(10,12,24,.3);flex-shrink:0}
+    .mm-thread-avatar{width:38px;height:38px;border-radius:50%;background:#1a1d30;border:2px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+    .mm-thread-title{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .mm-thread-sub{font-size:11.5px;color:var(--mm-text-2)}
+    .mm-thread-link{font-size:12px;color:var(--mm-accent-2);font-weight:600;margin-left:auto;white-space:nowrap;text-decoration:none}
+    .mm-back{display:none;background:none;border:none;color:var(--mm-text-1);cursor:pointer;font-size:16px;padding:4px}
+
+    .mm-body{flex:1;overflow-y:auto;padding:22px 24px;display:flex;flex-direction:column;gap:12px}
+    .mm-body::-webkit-scrollbar{width:4px}
+    .mm-body::-webkit-scrollbar-thumb{background:rgba(124,109,250,.2);border-radius:4px}
+
+    .mm-date-divider{display:flex;align-items:center;gap:12px;margin:6px 0}
+    .mm-date-divider::before,.mm-date-divider::after{content:'';flex:1;height:1px;background:var(--mm-glass-border)}
+    .mm-date-divider span{font-size:11px;color:var(--mm-text-3);white-space:nowrap;padding:3px 10px;background:rgba(255,255,255,.04);border-radius:20px;border:1px solid var(--mm-glass-border)}
+
+    .mm-msg{display:flex;max-width:72%;flex-direction:column;gap:2px;animation:mmIn .3s cubic-bezier(.34,1.56,.64,1) both}
+    @keyframes mmIn{from{opacity:0;transform:translateY(14px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+    .mm-msg.mine{align-self:flex-end;align-items:flex-end}
+    .mm-msg.theirs{align-self:flex-start;align-items:flex-start}
+    .mm-bubble{padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.5;word-break:break-word}
+    .mm-msg.mine .mm-bubble{background:var(--mm-sent-bg);color:#fff;border-bottom-right-radius:4px;box-shadow:0 4px 16px rgba(124,109,250,.35)}
+    .mm-msg.theirs .mm-bubble{background:var(--mm-recv-bg);color:var(--mm-text-1);border:1px solid var(--mm-glass-border);border-bottom-left-radius:4px;backdrop-filter:blur(8px)}
+    .mm-msg-time{font-size:10.5px;color:var(--mm-text-3);padding:0 4px}
+
+    .mm-pending-note{align-self:center;font-size:12px;color:var(--mm-text-3);text-align:center;padding:6px 16px;background:rgba(255,255,255,.04);border:1px solid var(--mm-glass-border);border-radius:20px;margin:4px 0}
+
+    .mm-typing{display:flex;align-items:center;gap:8px;align-self:flex-start;animation:mmIn .3s ease both}
+    .mm-typing-dots{display:flex;align-items:center;gap:4px;background:var(--mm-recv-bg);border:1px solid var(--mm-glass-border);padding:12px 16px;border-radius:18px;border-bottom-left-radius:4px}
+    .mm-typing-dots span{width:7px;height:7px;border-radius:50%;background:var(--mm-text-3);animation:mmTypingDot 1.4s ease-in-out infinite}
+    .mm-typing-dots span:nth-child(2){animation-delay:.2s}
+    .mm-typing-dots span:nth-child(3){animation-delay:.4s}
+    @keyframes mmTypingDot{0%,60%,100%{transform:translateY(0);background:var(--mm-text-3)}30%{transform:translateY(-6px);background:var(--mm-accent-2)}}
+
+    .mm-thread-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--mm-text-3);text-align:center;padding:24px}
+    .mm-thread-empty .icon{font-size:52px;opacity:.4;animation:mmPulse 2.5s ease-in-out infinite}
+    @keyframes mmPulse{0%,100%{transform:scale(1);opacity:.4}50%{transform:scale(1.08);opacity:.6}}
+
+    .mm-input-row{display:flex;align-items:center;gap:8px;padding:14px 18px;border-top:1px solid var(--mm-glass-border);height:72px;background:rgba(10,12,24,.3);flex-shrink:0}
+    .mm-input-wrap{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--mm-glass-border);border-radius:14px;padding:0 14px;transition:border-color var(--mm-ease),background var(--mm-ease)}
+    .mm-input-wrap:focus-within{border-color:rgba(124,109,250,.5);background:rgba(124,109,250,.06)}
+    .mm-input-wrap textarea{width:100%;max-height:100px;height:44px;padding-top:11px;resize:none;background:none;border:none;outline:none;color:var(--mm-text-1);font-family:'DM Sans',sans-serif;font-size:14.5px}
+    .mm-input-wrap textarea::placeholder{color:var(--mm-text-3)}
+    .mm-send{width:44px;height:44px;border-radius:12px;border:none;background:var(--mm-accent-grad);color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all var(--mm-ease);box-shadow:0 4px 16px rgba(124,109,250,.4);flex-shrink:0}
+    .mm-send:hover{transform:scale(1.08);box-shadow:0 6px 20px rgba(124,109,250,.6)}
+    .mm-send:active{transform:scale(.95)}
+
+    #msg-noauth{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:40px}
 
     @media(max-width:900px){
-      .msg-wrap{height:calc(100vh - 130px)}
-      .msg-list-panel{width:100%;border-right:none}
-      .msg-wrap.thread-open .msg-list-panel{display:none}
-      .msg-thread-panel{display:none}
-      .msg-wrap.thread-open .msg-thread-panel{display:flex}
-      .msg-back-btn{display:flex}
+      .mm-shell{padding:0;gap:0}
+      .mm-list-panel{width:100%;min-width:0;border-radius:0}
+      .mm-thread-panel{border-radius:0}
+      .mm-shell.thread-open .mm-list-panel{display:none}
+      .mm-thread-panel{display:none}
+      .mm-shell.thread-open .mm-thread-panel{display:flex}
+      .mm-back{display:flex}
+      .mm-msg{max-width:88%}
     }
   </style>
 </head>
 <body>
-<div class="app-wrapper ready">
-  <div id="sb"></div>
-  <main class="main-content">
-    <div id="tb"></div>
 
-    <div id="noauth" class="hidden" style="padding:80px 44px;text-align:center">
-      <div style="font-size:40px;margin-bottom:16px">🔒</div>
-      <h2 style="margin-bottom:8px">Sign in to see your messages</h2>
-      <p style="margin-bottom:24px">Conversations you start about a lesson show up here.</p>
-      <div style="display:flex;gap:10px;justify-content:center">
-        <a href="login.html" class="btn btn-ghost">Sign in</a>
-        <a href="signup.html" class="btn btn-primary">Create account</a>
+<div id="msg-root">
+  <div class="bg-layer"><div class="bg-base"></div><div class="bg-overlay"></div>
+    <div class="bg-orbs"><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div></div>
+  </div>
+
+  <a href="../index.html" class="mm-close" title="Back to site"><i class="fa fa-xmark"></i></a>
+
+  <div id="msg-noauth" class="hidden">
+    <div style="font-size:40px;margin-bottom:14px">🔒</div>
+    <h2 style="margin-bottom:8px">Sign in to see your messages</h2>
+    <p style="margin-bottom:22px;color:var(--mm-text-2)">Conversations you start about a lesson show up here.</p>
+    <div style="display:flex;gap:10px">
+      <a href="login.html" class="btn btn-ghost">Sign in</a>
+      <a href="signup.html" class="btn btn-primary">Create account</a>
+    </div>
+  </div>
+
+  <div class="mm-shell" id="mm-shell">
+    <div class="mm-list-panel">
+      <div class="mm-list-head"><h1>Messages 💬</h1></div>
+      <div class="mm-list" id="mm-list"></div>
+    </div>
+    <div class="mm-thread-panel" id="mm-thread-panel">
+      <div class="mm-thread-empty">
+        <div class="icon">💬</div>
+        <p style="font-size:13.5px">Pick a conversation, or message a lesson author from any lesson page.</p>
       </div>
     </div>
-
-    <div id="msg-content" class="msg-wrap">
-      <div class="msg-list-panel">
-        <div class="msg-list-head"><h2>Messages</h2></div>
-        <div class="msg-list" id="msg-list"></div>
-      </div>
-      <div class="msg-thread-panel" id="msg-thread-panel">
-        <div class="msg-thread-empty" id="msg-thread-empty">
-          <div style="font-size:30px;opacity:.3">💬</div>
-          <p style="font-size:13.5px">Pick a conversation, or message a lesson author from any lesson page.</p>
-        </div>
-      </div>
-    </div>
-  </main>
+  </div>
 </div>
+
 <div class="toast"></div>
-<div id="mn"></div>
 
 <script src="../js/app.js"></script>
 <script src="../js/api.js"></script>
 <script>
-  document.getElementById('sb').innerHTML = buildSidebar('messages');
-  document.getElementById('tb').innerHTML = buildTopbar();
-  document.getElementById('mn').innerHTML = buildMobileNav('messages');
-
   if (!Auth.isLoggedIn()) {
-    document.getElementById('noauth').classList.remove('hidden');
-    document.getElementById('msg-content').classList.add('hidden');
+    document.getElementById('msg-noauth').classList.remove('hidden');
+    document.getElementById('mm-shell').style.display = 'none';
   } else {
     boot();
   }
 
   var conversations = [];
   var openConversationId = null;
-  var pendingLessonId = null;   // set when we arrived via ?lesson=... with no thread yet
+  var pendingLessonId = null;
   var pendingLessonTitle = null;
   var pollTimer = null;
 
+  // Deterministic little avatar-flavour per conversation id, purely
+  // cosmetic — the anonymity contract (no real identity ever exposed)
+  // is unchanged, this only picks a consistent icon for a given thread.
+  var AVATAR_ICONS = ['🙂','🌙','🍀','⭐','🌊','🔥','🦋','🌵','🍉','🎧'];
+  function avatarFor(id){
+    var sum = 0;
+    for (var i = 0; i < id.length; i++) sum += id.charCodeAt(i);
+    return AVATAR_ICONS[sum % AVATAR_ICONS.length];
+  }
+
   function timeAgo(iso){
     var s = Math.floor((Date.now() - new Date(iso).getTime())/1000);
-    if(s<60) return 'just now';
-    if(s<3600) return Math.floor(s/60)+'m ago';
-    if(s<86400) return Math.floor(s/3600)+'h ago';
-    if(s<2592000) return Math.floor(s/86400)+'d ago';
-    return Math.floor(s/2592000)+'mo ago';
+    if(s<60) return 'now';
+    if(s<3600) return Math.floor(s/60)+'m';
+    if(s<86400) return Math.floor(s/3600)+'h';
+    if(s<2592000) return Math.floor(s/86400)+'d';
+    return Math.floor(s/2592000)+'mo';
+  }
+
+  function escapeHtml(s){
+    var d = document.createElement('div');
+    d.textContent = s == null ? '' : s;
+    return d.innerHTML;
   }
 
   function boot(){
+    document.getElementById('mm-list').innerHTML = '<div class="mm-empty">Loading conversations…</div>';
     var P = new URLSearchParams(location.search);
     var lessonParam = P.get('lesson');
     var titleParam = P.get('title');
@@ -128,20 +208,13 @@
         for (var i = 0; i < conversations.length; i++) {
           if (conversations[i].lesson && conversations[i].lesson.id === lessonParam) { existing = conversations[i]; break; }
         }
-        if (existing) {
-          openConversation(existing.id);
-        } else {
-          pendingLessonId = lessonParam;
-          pendingLessonTitle = titleParam || 'this lesson';
-          showComposeNew();
-        }
+        if (existing) openConversation(existing.id);
+        else { pendingLessonId = lessonParam; pendingLessonTitle = titleParam || 'this lesson'; showComposeNew(); }
       }
     });
 
     pollTimer = setInterval(function(){
-      loadConversations(function(){
-        if (openConversationId) refreshOpenThread();
-      });
+      loadConversations(function(){ if (openConversationId) refreshOpenThread(); });
     }, 12000);
   }
 
@@ -151,14 +224,14 @@
       renderList();
       if (cb) cb();
     }).catch(function(){
-      document.getElementById('msg-list').innerHTML = '<div class="msg-empty">Could not load messages. Check your connection.</div>';
+      document.getElementById('mm-list').innerHTML = '<div class="mm-empty">Could not load messages. Check your connection.</div>';
     });
   }
 
   function renderList(){
-    var el = document.getElementById('msg-list');
+    var el = document.getElementById('mm-list');
     if (!conversations.length) {
-      el.innerHTML = '<div class="msg-empty">No conversations yet. Message a lesson author from any lesson page to start one.</div>';
+      el.innerHTML = '<div class="mm-empty">No conversations yet.<br>Message a lesson author from any lesson page to start one.</div>';
       return;
     }
     el.innerHTML = conversations.map(function(c){
@@ -166,44 +239,28 @@
       var preview = c.lastMessage ? (c.lastMessage.isMine ? 'You: ' : '') + c.lastMessage.content : (c.status === 'pending' ? 'Message request sent' : 'No messages yet');
       var time = c.lastMessage ? timeAgo(c.lastMessage.createdAt) : '';
       var unread = c.unreadCount > 0;
-      return '<div class="msg-row ' + (unread ? 'unread' : '') + ' ' + (c.id === openConversationId ? 'active' : '') + '" onclick="openConversation(\'' + c.id + '\')">'
-        + '<div class="msg-row-avatar">?</div>'
-        + '<div class="msg-row-body">'
-        + '<div class="msg-row-lesson">' + escapeHtml(title) + '</div>'
-        + '<div class="msg-row-preview">' + escapeHtml(preview) + '</div>'
-        + '</div>'
-        + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">'
-        + '<div class="msg-row-time">' + time + '</div>'
-        + (unread ? '<div class="msg-row-dot"></div>' : '')
-        + '</div>'
+      return '<div class="mm-row ' + (unread?'unread':'') + ' ' + (c.id===openConversationId?'active':'') + '" onclick="openConversation(\'' + c.id + '\')">'
+        + '<div class="mm-row-avatar">' + avatarFor(c.id) + '</div>'
+        + '<div class="mm-row-body"><div class="mm-row-lesson">' + escapeHtml(title) + '</div><div class="mm-row-preview">' + escapeHtml(preview) + '</div></div>'
+        + '<div class="mm-row-meta"><div class="mm-row-time">' + time + '</div>' + (unread?'<div class="mm-row-dot"></div>':'') + '</div>'
         + '</div>';
     }).join('');
   }
 
-  function escapeHtml(s){
-    var d = document.createElement('div');
-    d.textContent = s == null ? '' : s;
-    return d.innerHTML;
-  }
-
   function showComposeNew(){
-    var wrap = document.querySelector('.msg-wrap');
-    wrap.classList.add('thread-open');
-    var panel = document.getElementById('msg-thread-panel');
+    document.getElementById('mm-shell').classList.add('thread-open');
+    var panel = document.getElementById('mm-thread-panel');
     panel.innerHTML = ''
-      + '<div class="msg-thread-head">'
-      + '<button class="msg-back-btn" onclick="closeThread()">←</button>'
-      + '<div><div class="msg-thread-title">' + escapeHtml(pendingLessonTitle) + '</div><div class="msg-thread-sub">New message · anonymous until sent</div></div>'
-      + '</div>'
-      + '<div class="msg-thread-empty"><div style="font-size:26px;opacity:.3">✍️</div><p style="font-size:13px">Say what you want to ask about this lesson. The author sees your message and the lesson it\'s about — nothing else.</p></div>'
-      + '<div class="msg-input-row">'
-      + '<textarea id="msg-input" rows="1" placeholder="Write your message…"></textarea>'
-      + '<button class="msg-send-btn" onclick="sendNew()">' + ic('send') + '</button>'
-      + '</div>';
+      + '<div class="mm-thread-head"><button class="mm-back" onclick="closeThread()">←</button>'
+      + '<div class="mm-thread-avatar">✍️</div>'
+      + '<div style="min-width:0"><div class="mm-thread-title">' + escapeHtml(pendingLessonTitle) + '</div><div class="mm-thread-sub">New message · anonymous until sent</div></div></div>'
+      + '<div class="mm-thread-empty"><div class="icon">✍️</div><p style="font-size:13px">Say what you want to ask about this lesson. The author sees your message and the lesson it\'s about — nothing else.</p></div>'
+      + '<div class="mm-input-row"><div class="mm-input-wrap"><textarea id="mm-input" rows="1" placeholder="Write your message…"></textarea></div>'
+      + '<button class="mm-send" onclick="sendNew()"><i class="fa fa-paper-plane"></i></button></div>';
   }
 
   function sendNew(){
-    var input = document.getElementById('msg-input');
+    var input = document.getElementById('mm-input');
     var text = input.value.trim();
     if (!text) return;
     input.disabled = true;
@@ -217,9 +274,9 @@
 
   function openConversation(id){
     openConversationId = id;
-    var wrap = document.querySelector('.msg-wrap');
-    wrap.classList.add('thread-open');
+    document.getElementById('mm-shell').classList.add('thread-open');
     renderList();
+    document.getElementById('mm-thread-panel').innerHTML = '<div class="mm-thread-empty"><div class="icon">💬</div><p style="font-size:13.5px">Loading conversation…</p></div>';
     Api.getConversation(id).then(function(res){
       if (res.error) { showToast(res.error); return; }
       renderThread(res);
@@ -229,38 +286,35 @@
 
   function refreshOpenThread(){
     if (!openConversationId) return;
-    Api.getConversation(openConversationId).then(function(res){
-      if (!res.error) renderThread(res);
-    }).catch(function(){});
+    Api.getConversation(openConversationId).then(function(res){ if (!res.error) renderThread(res); }).catch(function(){});
   }
 
   function renderThread(convo){
-    var panel = document.getElementById('msg-thread-panel');
+    var panel = document.getElementById('mm-thread-panel');
     var title = convo.lesson ? convo.lesson.title : 'Deleted lesson';
-    var statusNote = convo.status === 'pending' ? '<div class="msg-pending-note">Waiting for a reply — they\'ll see this once they open it.</div>' : '';
+    var statusNote = convo.status === 'pending' ? '<div class="mm-pending-note">Waiting for a reply — they\'ll see this once they open it.</div>' : '';
     panel.innerHTML = ''
-      + '<div class="msg-thread-head">'
-      + '<button class="msg-back-btn" onclick="closeThread()">←</button>'
-      + '<div style="min-width:0"><div class="msg-thread-title">' + escapeHtml(title) + '</div><div class="msg-thread-sub">Anonymous conversation</div></div>'
-      + (convo.lesson ? '<a class="msg-thread-link" href="manual.html?cat=' + escapeHtml(convo.lesson.category) + '&lesson=' + escapeHtml(convo.lesson.id) + '">View lesson</a>' : '')
+      + '<div class="mm-thread-head"><button class="mm-back" onclick="closeThread()">←</button>'
+      + '<div class="mm-thread-avatar">' + avatarFor(convo.id) + '</div>'
+      + '<div style="min-width:0"><div class="mm-thread-title">' + escapeHtml(title) + '</div><div class="mm-thread-sub">Anonymous conversation</div></div>'
+      + (convo.lesson ? '<a class="mm-thread-link" href="manual.html?cat=' + escapeHtml(convo.lesson.category) + '&lesson=' + escapeHtml(convo.lesson.id) + '">View lesson</a>' : '')
       + '</div>'
+      + '<div class="mm-body" id="mm-body"></div>'
       + statusNote
-      + '<div class="msg-body" id="msg-body"></div>'
-      + '<div class="msg-input-row">'
-      + '<textarea id="msg-reply-input" rows="1" placeholder="Type a message…" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();sendReply(\'' + convo.id + '\')}"></textarea>'
-      + '<button class="msg-send-btn" onclick="sendReply(\'' + convo.id + '\')">' + ic('send') + '</button>'
-      + '</div>';
+      + '<div class="mm-input-row"><div class="mm-input-wrap"><textarea id="mm-reply-input" rows="1" placeholder="Type a message…" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();sendReply(\'' + convo.id + '\')}"></textarea></div>'
+      + '<button class="mm-send" onclick="sendReply(\'' + convo.id + '\')"><i class="fa fa-paper-plane"></i></button></div>';
 
-    var body = document.getElementById('msg-body');
-    body.innerHTML = convo.messages.map(function(m){
-      return '<div class="msg-bubble ' + (m.isMine ? 'mine' : 'theirs') + '">' + escapeHtml(m.content)
-        + '<span class="msg-bubble-time">' + timeAgo(m.createdAt) + '</span></div>';
-    }).join('') || '<div class="msg-empty">No messages yet.</div>';
+    var body = document.getElementById('mm-body');
+    var html = '<div class="mm-date-divider"><span>Today</span></div>';
+    html += convo.messages.map(function(m){
+      return '<div class="mm-msg ' + (m.isMine?'mine':'theirs') + '"><div class="mm-bubble">' + escapeHtml(m.content) + '</div><div class="mm-msg-time">' + timeAgo(m.createdAt) + '</div></div>';
+    }).join('');
+    body.innerHTML = html || '<div class="mm-empty">No messages yet.</div>';
     body.scrollTop = body.scrollHeight;
   }
 
   function sendReply(conversationId){
-    var input = document.getElementById('msg-reply-input');
+    var input = document.getElementById('mm-reply-input');
     var text = input.value.trim();
     if (!text) return;
     input.value = '';
@@ -273,8 +327,8 @@
 
   function closeThread(){
     openConversationId = null;
-    document.querySelector('.msg-wrap').classList.remove('thread-open');
-    document.getElementById('msg-thread-panel').innerHTML = '<div class="msg-thread-empty" id="msg-thread-empty"><div style="font-size:30px;opacity:.3">💬</div><p style="font-size:13.5px">Pick a conversation, or message a lesson author from any lesson page.</p></div>';
+    document.getElementById('mm-shell').classList.remove('thread-open');
+    document.getElementById('mm-thread-panel').innerHTML = '<div class="mm-thread-empty"><div class="icon">💬</div><p style="font-size:13.5px">Pick a conversation, or message a lesson author from any lesson page.</p></div>';
     renderList();
   }
 </script>
